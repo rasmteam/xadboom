@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xadboom — Build Workflow · React + Django + PostgreSQL</title>
+    <meta
+      name="description"
+      content="Step-by-step build workflow and runtime request flow for the Xadboom curated e-commerce platform: React frontend, Django backend, PostgreSQL database."
+    />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #f5f5f7;
+        --surface-warm: #fbfbfd;
+        --fg: #1d1d1f;
+        --fg-2: #424245;
+        --muted: #6e6e73;
+        --meta: #86868b;
+        --border: #d2d2d7;
+        --border-soft: #e8e8ed;
+        --accent: #0071e3;
+        --accent-on: #ffffff;
+        --accent-hover: #0077ed;
+        --accent-active: #0066cc;
+        --font-display:
+          "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        --font-body:
+          "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+        --text-xs: 12px;
+        --text-sm: 14px;
+        --text-base: 17px;
+        --text-lg: 21px;
+        --text-xl: 28px;
+        --text-2xl: 40px;
+        --text-3xl: 56px;
+        --leading-body: 1.47;
+        --leading-tight: 1.05;
+        --tracking-display: -0.015em;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 20px;
+        --space-6: 24px;
+        --space-8: 32px;
+        --space-12: 48px;
+        --section-y-desktop: 100px;
+        --section-y-tablet: 64px;
+        --section-y-phone: 40px;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 18px;
+        --radius-pill: 980px;
+        --elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
+        --focus-ring: 0 0 0 4px color-mix(in oklab, var(--accent), transparent 65%);
+        --motion-fast: 150ms;
+        --motion-base: 220ms;
+        --ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
+        --container-max: 1024px;
+        --container-gutter-desktop: 22px;
+        --container-gutter-tablet: 18px;
+        --container-gutter-phone: 16px;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        line-height: var(--leading-body);
+        letter-spacing: -0.022em;
+        -webkit-font-smoothing: antialiased;
+      }
+      .container {
+        max-width: var(--container-max);
+        margin-inline: auto;
+        padding-inline: var(--container-gutter-desktop);
+      }
+      section { padding-block: var(--section-y-desktop); }
+      .band-light { background: var(--bg); }
+      .band-soft { background: var(--surface); }
+      .band-warm { background: var(--surface-warm); }
+      @media (max-width: 1023px) {
+        .container { padding-inline: var(--container-gutter-tablet); }
+        section { padding-block: var(--section-y-tablet); }
+      }
+      @media (max-width: 639px) {
+        .container { padding-inline: var(--container-gutter-phone); }
+        section { padding-block: var(--section-y-phone); }
+      }
+      h1, h2, h3 {
+        font-family: var(--font-display);
+        margin: 0;
+        color: var(--fg);
+      }
+      h1 {
+        font-size: var(--text-3xl);
+        font-weight: 600;
+        line-height: var(--leading-tight);
+        letter-spacing: var(--tracking-display);
+      }
+      h2 {
+        font-size: var(--text-2xl);
+        font-weight: 600;
+        line-height: 1.1;
+        letter-spacing: var(--tracking-display);
+      }
+      h3 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.007em; }
+      p { margin: 0; }
+      .eyebrow {
+        font-family: var(--font-display);
+        font-size: var(--text-xs);
+        font-weight: 600;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .lead { font-size: var(--text-lg); line-height: 1.38; color: var(--fg-2); letter-spacing: -0.011em; }
+      .body-sm { font-size: var(--text-sm); }
+      .body-muted { color: var(--muted); }
+      .stack-3 > * + * { margin-block-start: var(--space-3); }
+      .stack-4 > * + * { margin-block-start: var(--space-4); }
+      .stack-6 > * + * { margin-block-start: var(--space-6); }
+      @media (max-width: 1023px) {
+        h1 { font-size: 40px; }
+        h2 { font-size: 32px; }
+        .lead { font-size: 19px; }
+      }
+      @media (max-width: 639px) {
+        h1 { font-size: 32px; }
+        h2 { font-size: 26px; }
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--fg-2);
+        font-size: var(--text-xs);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+      .chip-react { color: var(--accent-active); border-color: color-mix(in oklab, var(--accent), transparent 55%); }
+      .chip-django { color: var(--fg); }
+      .chip-db { color: var(--fg-2); background: var(--surface); }
+      .chip-svc { color: var(--muted); background: var(--surface-warm); }
+
+      .diagram-shell {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: var(--bg);
+        overflow: hidden;
+      }
+      .diagram-shell svg { display: block; width: 100%; height: auto; }
+      .diagram-caption {
+        border-top: 1px solid var(--border-soft);
+        background: var(--surface-warm);
+        padding: var(--space-3) var(--space-5);
+        font-size: var(--text-sm);
+        color: var(--muted);
+      }
+
+      /* Phase flow — vertical, connected */
+      .phase-list { list-style: none; margin: 0; padding: 0; }
+      .phase {
+        position: relative;
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        gap: var(--space-5);
+        padding-block: var(--space-5);
+      }
+      .phase + .phase::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 27px;
+        width: 2px;
+        height: var(--space-5);
+        background: var(--border);
+      }
+      .phase-num {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--fg);
+        color: var(--accent-on);
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: var(--text-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2px;
+      }
+      .phase-stack { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+      .phase p { max-width: 62ch; }
+      @media (max-width: 639px) {
+        .phase { grid-template-columns: 44px 1fr; gap: var(--space-4); }
+        .phase-num { width: 44px; height: 44px; font-size: var(--text-base); }
+        .phase + .phase::before { left: 21px; }
+      }
+      svg text { font-family: var(--font-body); }
+      svg .svg-display { font-family: var(--font-display); font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <!-- ═════════════════════════════════════════════════════════
+         HERO
+    ════════════════════════════════════════════════════════════ -->
+    <section class="band-light">
+      <div class="container stack-4">
+        <p class="eyebrow">Xadboom · Project document v1.0</p>
+        <h1>Build workflow, step by step</h1>
+        <p class="lead" style="max-width: 56ch">
+          How the Xadboom platform comes together on its approved stack —
+          React frontend, Django backend, PostgreSQL database — from data
+          model through checkout integration to deployment for the Iran
+          market.
+        </p>
+        <div>
+          <span class="chip chip-react">React · frontend</span>
+          <span class="chip chip-django">Django / DRF · backend</span>
+          <span class="chip chip-db">PostgreSQL · database</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <!-- SYSTEM ARCHITECTURE — how the three layers relate -->
+    <section class="band-soft" id="architecture">
+      <div class="container stack-6">
+        <div class="stack-3">
+          <p class="eyebrow">System architecture</p>
+          <h2>Three layers, one request path</h2>
+          <p class="lead body-muted" style="max-width: 58ch">
+            Every feature in the project document — designer pages,
+            availability badges, cart lock, checkout — lives in exactly one
+            of these layers.
+          </p>
+        </div>
+
+        <figure class="diagram-shell" style="margin: 0">
+          <svg viewBox="0 0 1000 420" role="img" aria-label="System architecture: React frontend calls the Django REST API, which reads and writes PostgreSQL; payment and email services sit beside Django.">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+              </marker>
+              <marker id="arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--meta)"/>
+              </marker>
+            </defs>
+
+            <!-- Client layer -->
+            <rect x="60" y="36" width="620" height="96" rx="14" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.5"/>
+            <text x="88" y="74" class="svg-display" font-size="19" fill="var(--fg)">React SPA — browser</text>
+            <text x="88" y="102" font-size="14" fill="var(--muted)">Home · Designers · Shop filters · Asset detail + stock badge · Cart &amp; checkout</text>
+
+            <!-- API layer -->
+            <rect x="60" y="176" width="620" height="112" rx="14" fill="var(--surface-warm)" stroke="var(--fg)" stroke-width="1.5"/>
+            <text x="88" y="212" class="svg-display" font-size="19" fill="var(--fg)">Django + Django REST Framework</text>
+            <text x="88" y="240" font-size="14" fill="var(--muted)">Designers API · Assets API · Cart &amp; checkout · Inventory cart-lock · Auth</text>
+            <text x="88" y="264" font-size="13" fill="var(--meta)">Django admin for curating limited-run stock</text>
+
+            <!-- Data layer -->
+            <rect x="60" y="332" width="620" height="72" rx="14" fill="var(--surface)" stroke="var(--fg)" stroke-width="1.5"/>
+            <text x="88" y="364" class="svg-display" font-size="19" fill="var(--fg)">PostgreSQL</text>
+            <text x="88" y="388" font-size="14" fill="var(--muted)">designers · assets · stock · carts · orders · users</text>
+
+            <!-- Side services -->
+            <rect x="740" y="176" width="210" height="56" rx="12" fill="var(--surface)" stroke="var(--border)"/>
+            <text x="845" y="200" text-anchor="middle" font-size="14" font-weight="600" fill="var(--fg)">Payment gateway</text>
+            <text x="845" y="220" text-anchor="middle" font-size="12" fill="var(--meta)">local · Iran market</text>
+            <rect x="740" y="252" width="210" height="56" rx="12" fill="var(--surface)" stroke="var(--border)"/>
+            <text x="845" y="276" text-anchor="middle" font-size="14" font-weight="600" fill="var(--fg)">Transactional email</text>
+            <text x="845" y="296" text-anchor="middle" font-size="12" fill="var(--meta)">order confirmation</text>
+
+            <!-- Flow arrows between layers -->
+            <line x1="300" y1="134" x2="300" y2="172" stroke="var(--accent)" stroke-width="2" marker-end="url(#arr)" marker-start="url(#arr)"/>
+            <text x="316" y="158" font-size="13" fill="var(--accent)">fetch data · submit cart</text>
+            <line x1="300" y1="290" x2="300" y2="328" stroke="var(--accent)" stroke-width="2" marker-end="url(#arr)" marker-start="url(#arr)"/>
+            <text x="316" y="314" font-size="13" fill="var(--accent)">queries · writes</text>
+            <line x1="684" y1="204" x2="736" y2="204" stroke="var(--meta)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrm)"/>
+            <line x1="684" y1="280" x2="736" y2="280" stroke="var(--meta)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrm)"/>
+          </svg>
+          <figcaption class="diagram-caption">
+            The payment gateway and email service are integrated behind Django, so the React app only ever talks to the REST API.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <!-- STEP-BY-STEP BUILD WORKFLOW -->
+    <section class="band-light" id="phases">
+      <div class="container stack-6">
+        <div class="stack-3">
+          <p class="eyebrow">Build workflow</p>
+          <h2>Seven phases from setup to launch</h2>
+          <p class="lead body-muted" style="max-width: 58ch">
+            Each phase produces something the next one depends on. Phase 2
+            comes before the API, the API before the frontend, so every
+            screen is built against real data — no mock swap-over later.
+          </p>
+        </div>
+
+        <ol class="phase-list">
+          <li class="phase">
+            <div class="phase-num" aria-hidden="true">1</div>
+            <div class="stack-3">
+              <h3>Scaffold the project</h3>
+              <p class="body-muted">
+                Create the repository, set up the React frontend build, the
+                Django project with a dedicated apps for designers, assets
+                and orders, and the PostgreSQL connection using environment
+                variables. Establish the shared design-system tokens and
+                component styles for both ends.
+              </p>
+              <div class="phase-stack">
+                <span class="chip">repo &amp; env config</span>
+                <span class="chip chip-react">React app scaffold</span>
+                <span class="chip chip-django">Django project + apps</span>
+                <span class="chip chip-db">PostgreSQL connection</span>
+              </div>
+            </div>
+          </li>
+
+          <li class="phase">
+            <div class="phase-num" aria-hidden="true">2</div>
+            <div class="stack-3">
+              <h3>Model the data in PostgreSQL</h3>
+              <p class="body-muted">
+                Define Django models and run migrations: designers (resume,
+                honors, philosophy), assets (type categories, materials,
+                dimensions, imagery), limited-run stock counts, the
+                designer↔asset link, users, carts and orders — the
+                inventory-control foundation the document requires.
+              </p>
+              <div class="phase-stack">
+                <span class="chip chip-django">models &amp; migrations</span>
+                <span class="chip chip-db">schema: designers · assets · stock</span>
+                <span class="chip chip-django">Django admin seeded</span>
+              </div>
+            </div>
+          </li>
+
+          <li class="phase">
+            <div class="phase-num" aria-hidden="true">3</div>
+            <div class="stack-3">
+              <h3>Build the REST API</h3>
+              <p class="body-muted">
+                Expose endpoints for designer pages, the shop (category and
+                designer filters), and asset pages with real-time stock
+                status. Add authentication and the server-side cart, and
+                deliver structured data for products and designer profiles
+                for SEO.
+              </p>
+              <div class="phase-stack">
+                <span class="chip chip-django">Django REST Framework</span>
+                <span class="chip">/designers · /assets · /cart · /checkout</span>
+                <span class="chip">auth</span>
+                <span class="chip">structured data</span>
+              </div>
+            </div>
+          </li>
+
+          <li class="phase">
+            <div class="phase-num" aria-hidden="true">4</div>
+            <div class="stack-3">
+              <h3>Integrate payments and email</h3>
+              <p class="body-muted">
+                Connect the payment gateway suited to the target region
+                behind a Django service layer, and trigger transactional
+                order-confirmation emails. The checkout endpoint writes the
+                order only after payment is confirmed.
+              </p>
+              <div class="phase-stack">
+                <span class="chip chip-svc">payment gateway</span>
+                <span class="chip chip-svc">confirmation email</span>
+                <span class="chip chip-django">callback verification</span>
+              </div>
+            </div>
+          </li>
+
+          <li class="phase">
+            <div class="phase-num" aria-hidden="true">5</div>
+            <div class="stack-3">
+              <h3>Build the React frontend</h3>
+              <p class="body-muted">
+                Implement the pages against the live API: home page with
+                the approved visual direction, designer pages (bio, honors,
+                asset collection), the shop with category/designer filters,
+                and asset detail pages with availability badges and
+                designer linkage.
+              </p>
+              <div class="phase-stack">
+                <span class="chip chip-react">home</span>
+                <span class="chip chip-react">designer pages</span>
+                <span class="chip chip-react">shop + filters</span>
+                <span class="chip chip-react">asset detail + stock badge</span>
+              </div>
+            </div>
+          </li>
+
+          <li class="phase">
+            <div class="phase-num" aria-hidden="true">6</div>
+            <div class="stack-3">
+              <h3>Closing the checkout loop</h3>
+              <p class="body-muted">
+                Wire cart and checkout end to end. Activate the temporary
+                cart-lock for limited-run items so two buyers cannot claim
+                the same piece, and verify the payment → order → email
+                sequence behaves correctly on failure paths too.
+              </p>
+              <div class="phase-stack">
+                <span class="chip chip-django">inventory cart-lock</span>
+                <span class="chip">end-to-end checkout flow</span>
+              </div>
+            </div>
+          </li>
+
+          <li class="phase">
+            <div class="phase-num" aria-hidden="true">7</div>
+            <div class="stack-3">
+              <h3>Test, deploy, and respond</h3>
+              <p class="body-muted">
+                Cover models, API contracts and checkout racing in tests,
+                then deploy the React build and Django services for the
+                initial Iran audience. Monitor stock accuracy and page
+                performance; the B2B trade portal stays on the post-launch
+                roadmap as agreed.
+              </p>
+              <div class="phase-stack">
+                <span class="chip">tests</span>
+                <span class="chip">performance</span>
+                <span class="chip">deployment</span>
+                <span class="chip chip-svc">B2B portal → later phase</span>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <!-- RUNTIME REQUEST FLOW -->
+    <section class="band-warm" id="runtime">
+      <div class="container stack-6">
+        <div class="stack-3">
+          <p class="eyebrow">Runtime request flow</p>
+          <h2>What happens when a customer buys</h2>
+          <p class="lead body-muted" style="max-width: 58ch">
+            The same three layers at runtime — a browse, then a purchase on
+            a limited stock of pieces.
+          </p>
+        </div>
+
+        <figure class="diagram-shell" style="margin: 0">
+          <svg viewBox="0 0 1000 560" role="img" aria-label="Sequence diagram: React requests data from Django, Django queries PostgreSQL, returns JSON; checkout triggers a stock reservation, payment, and order confirmation.">
+            <defs>
+              <marker id="rarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+              </marker>
+              <marker id="rparr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--fg-2)"/>
+              </marker>
+            </defs>
+
+            <!-- Lifeline headers -->
+            <rect x="60" y="20" width="180" height="44" rx="10" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.5"/>
+            <text x="150" y="47" text-anchor="middle" class="svg-display" font-size="16" fill="var(--accent)">React</text>
+            <rect x="410" y="20" width="180" height="44" rx="10" fill="var(--surface-warm)" stroke="var(--fg)" stroke-width="1.5"/>
+            <text x="500" y="47" text-anchor="middle" class="svg-display" font-size="16" fill="var(--fg)">Django REST API</text>
+            <rect x="760" y="20" width="180" height="44" rx="10" fill="var(--surface)" stroke="var(--fg)" stroke-width="1.5"/>
+            <text x="850" y="47" text-anchor="middle" class="svg-display" font-size="16" fill="var(--fg)">PostgreSQL</text>
+
+            <!-- Lifelines -->
+            <line x1="150" y1="64" x2="150" y2="530" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="5 5"/>
+            <line x1="500" y1="64" x2="500" y2="530" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="5 5"/>
+            <line x1="850" y1="64" x2="850" y2="530" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="5 5"/>
+
+            <!-- Browse -->
+            <text x="292" y="104" text-anchor="middle" font-size="13" font-weight="600" fill="var(--muted)">BROWSE</text>
+            <line x1="150" y1="118" x2="410" y2="118" stroke="var(--accent)" stroke-width="2" marker-end="url(#rarr)"/>
+            <text x="280" y="110" text-anchor="middle" font-size="13" fill="var(--fg)">1 · open designer page / asset page</text>
+            <line x1="500" y1="156" x2="850" y2="156" stroke="var(--accent)" stroke-width="2" marker-end="url(#rarr)"/>
+            <text x="672" y="148" text-anchor="middle" font-size="13" fill="var(--fg)">2 · query designer, assets, stock count</text>
+            <line x1="850" y1="194" x2="500" y2="194" stroke="var(--accent)" stroke-width="2" marker-end="url(#rparr)"/>
+            <text x="672" y="186" text-anchor="middle" font-size="13" fill="var(--fg-2)">3 · rows returned</text>
+            <line x1="500" y1="232" x2="150" y2="232" stroke="var(--accent)" stroke-width="2" marker-end="url(#rparr)"/>
+            <text x="280" y="224" text-anchor="middle" font-size="13" fill="var(--fg-2)">4 · JSON → render page + availability badge</text>
+
+            <!-- Purchase -->
+            <text x="292" y="278" text-anchor="middle" font-size="13" font-weight="600" fill="var(--muted)">PURCHASE</text>
+            <line x1="150" y1="292" x2="410" y2="292" stroke="var(--accent)" stroke-width="2" marker-end="url(#rarr)"/>
+            <text x="280" y="284" text-anchor="middle" font-size="13" fill="var(--fg)">5 · add to cart (server-side cart)</text>
+            <line x1="150" y1="330" x2="410" y2="330" stroke="var(--accent)" stroke-width="2" marker-start="url(#rparr)"/>
+            <text x="280" y="322" text-anchor="middle" font-size="13" fill="var(--fg)">6 · checkout</text>
+            <line x1="500" y1="368" x2="850" y2="368" stroke="var(--accent)" stroke-width="2" marker-start="url(#rarr)"/>
+            <text x="664" y="360" text-anchor="middle" font-size="13" fill="var(--fg)">7 · lock stock / reserve then decrement</text>
+
+            <!-- Payment -->
+            <rect x="440" y="394" width="330" height="40" rx="10" fill="var(--bg)" stroke="var(--border)"/>
+            <text x="500" y="419" font-size="13" fill="var(--fg)">8 · payment gateway confirms (or fails → release)</text>
+
+            <line x1="500" y1="452" x2="850" y2="452" stroke="var(--accent)" stroke-width="2" marker-end="url(#rarr)"/>
+            <text x="662" y="444" text-anchor="middle" font-size="13" fill="var(--fg)">9 · order committed</text>
+
+            <line x1="500" y1="490" x2="150" y2="490" stroke="var(--accent)" stroke-width="2" marker-end="url(#rparr)"/>
+            <text x="316" y="482" text-anchor="middle" font-size="13" fill="var(--fg-2)">10 · confirmation screen + order email sent</text>
+          </svg>
+          <figcaption class="diagram-caption">
+            The cart-lock at step 7 is what protects limited-manufactured pieces from being double-sold during checkout.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <!-- FOOTER -->
+    <section class="band-light">
+      <div class="container">
+        <p class="body-sm body-muted">
+          Xadboom e-commerce platform · workflow diagram built from the
+          Project Document (v1.0) · stack: React + Django + PostgreSQL.
+        </p>
+      </div>
+    </section>
+  </body>
+</html>
